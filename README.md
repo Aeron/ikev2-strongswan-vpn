@@ -1,6 +1,6 @@
 # IKEv2 VPN (Strongswan) Server @ Docker
 
-A Docker image to help deploy Strongswan-based IKEv2 VPN on an own server.
+A Docker image to help deploy [Strongswan](https://strongswan.org)-based IKEv2 VPN on an own server.
 
 ## Usage
 
