@@ -16,7 +16,7 @@ Or, it’s always possible to run it only with the `NET_ADMIN` capability:
 docker run -d --name ikev2-vpn --restart=always --cap-add net_admin -p 500:500/udp -p 4500:4500/udp aeron/ikev2-strongswan-vpn:latest
 ```
 
-**Note**: In this case, related [kernel parameters setup]((#kernel-parameters)) required before.
+**Note**: In this case, related [kernel parameters setup](#kernel-parameters) required before.
 
 Optionally, it’s possible to save/restore a shared secret by mounting the `/etc/ipsec.secrets` file.
 
