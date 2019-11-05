@@ -40,7 +40,7 @@ docker run -it --rm --volumes-from ikev2-vpn -e HOST=example.com aeron/ikev2-str
 
 ### Kernel Parameters
 
-If container was never run in privileged mode and such approach is undesirable, then run the following first:
+If a container was never run in privileged mode and such an approach is undesirable, then run the following first:
 
 ```sh
 sysctl -w net.ipv4.ip_forward=1
