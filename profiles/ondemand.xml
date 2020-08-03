@@ -44,20 +44,20 @@
                     <key>IKESecurityAssociationParameters</key>
                     <dict>
                         <key>EncryptionAlgorithm</key>
-                        <string>AES-256</string>
+                        <string>AES-256-GCM</string>
                         <key>IntegrityAlgorithm</key>
                         <string>SHA2-256</string>
                         <key>DiffieHellmanGroup</key>
-                        <integer>14</integer>
+                        <integer>20</integer>
                     </dict>
                     <key>ChildSecurityAssociationParameters</key>
                     <dict>
                         <key>EncryptionAlgorithm</key>
-                        <string>AES-256</string>
+                        <string>AES-256-GCM</string>
                         <key>IntegrityAlgorithm</key>
                         <string>SHA2-256</string>
                         <key>DiffieHellmanGroup</key>
-                        <integer>14</integer>
+                        <integer>20</integer>
                     </dict>
                     <key>OnDemandEnabled</key>
                     <integer>1</integer>
