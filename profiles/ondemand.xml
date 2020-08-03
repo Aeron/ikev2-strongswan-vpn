@@ -68,6 +68,8 @@
                             <string>Connect</string>
                         </dict>
                     </array>
+                    <key>EnablePFS</key>
+                    <true/>
                 </dict>
             </dict>
         </array>

@@ -59,6 +59,8 @@
                         <key>DiffieHellmanGroup</key>
                         <integer>14</integer>
                     </dict>
+                    <key>EnablePFS</key>
+                    <true/>
                 </dict>
             </dict>
         </array>
