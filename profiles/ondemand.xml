@@ -34,7 +34,7 @@
                     <key>RemoteIdentifier</key>
                     <string>${REMOTE_ID}</string>
                     <key>LocalIdentifier</key>
-                    <string></string>
+                    <string>${LOCAL_ID}</string>
                     <key>AuthenticationMethod</key>
                     <string>SharedSecret</string>
                     <key>SharedSecret</key>
