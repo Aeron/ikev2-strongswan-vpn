@@ -18,7 +18,17 @@ docker run -d --name ikev2-vpn --restart=always --cap-add net_admin -p 500:500/u
 
 **Note**: In this case, related [kernel parameters setup](#kernel-parameters) required before.
 
+### Shared secret
+
+To get a shared secret only, use the following:
+
+```sh
+docker run -it --rm --volumes-from ikev2-vpn aeron/ikev2-strongswan-vpn:latest secret
+```
+
 Optionally, it’s possible to save/restore a shared secret by mounting the `/etc/ipsec.secrets` file.
+
+### Device Management Profile
 
 To generate a `.mobileconfig` file for macOS/iOS, run the following:
 
@@ -29,12 +39,6 @@ docker run -it --rm --volumes-from ikev2-vpn -e HOST=example.com aeron/ikev2-str
 Replace the `example.com` with the desired domain name; an IP address may be used instead as well.
 
 Then copy this `ikev2-vpn.mobileconfig` file on a machine and install it by double-click, or transfer it on an iOS device via AirDrop.
-
-Also, it’s possible to get a shared secret only:
-
-```sh
-docker run -it --rm --volumes-from ikev2-vpn -e HOST=example.com aeron/ikev2-strongswan-vpn:latest secret
-```
 
 ## Caveats
 
