@@ -3,6 +3,7 @@ FROM debian:stretch-slim
 ENV LANG C.UTF-8
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    libstrongswan-standard-plugins \
     strongswan \
     iptables \
     procps \
