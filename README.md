@@ -2,6 +2,8 @@
 
 A Docker image to help deploy [Strongswan](https://strongswan.org)-based IKEv2 VPN on an own server.
 
+By default, the minimum configuration is [CNSA Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm) compliant.
+
 ## Usage
 
 Run a container with the `--privileged` flag:
@@ -39,6 +41,14 @@ docker run -it --rm --volumes-from ikev2-vpn -e HOST=example.com aeron/ikev2-str
 Replace the `example.com` with the desired domain name; an IP address may be used instead as well.
 
 Then copy this `ikev2-vpn.mobileconfig` file on a machine and install it by double-click, or transfer it on an iOS device via AirDrop.
+
+If there’s a need to identify different clients, then `LOCAL_ID` value could be supplied:
+
+```sh
+docker run -it --rm --volumes-from ikev2-vpn -e HOST=example.com -e LOCAL_ID=john.example.com aeron/ikev2-strongswan-vpn:latest profile > ikev2-vpn.mobileconfig
+```
+
+Usually, the `LOCAL_ID` should be an IP address, FQDN, UserFQDN, or ASN1DN, but a simple name suits as well.
 
 ## Caveats
 
