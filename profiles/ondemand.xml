@@ -46,7 +46,7 @@
                         <key>EncryptionAlgorithm</key>
                         <string>AES-256-GCM</string>
                         <key>IntegrityAlgorithm</key>
-                        <string>SHA2-256</string>
+                        <string>SHA2-384</string>
                         <key>DiffieHellmanGroup</key>
                         <integer>20</integer>
                     </dict>
@@ -55,7 +55,7 @@
                         <key>EncryptionAlgorithm</key>
                         <string>AES-256-GCM</string>
                         <key>IntegrityAlgorithm</key>
-                        <string>SHA2-256</string>
+                        <string>SHA2-384</string>
                         <key>DiffieHellmanGroup</key>
                         <integer>20</integer>
                     </dict>
