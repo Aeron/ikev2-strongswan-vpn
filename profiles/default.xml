@@ -59,6 +59,8 @@
                         <key>DiffieHellmanGroup</key>
                         <integer>20</integer>
                     </dict>
+                    <key>DeadPeerDetectionRate</key>
+                    <string>High</string>
                     <key>EnablePFS</key>
                     <true/>
                 </dict>
