@@ -1,13 +1,27 @@
-# IKEv2 VPN (Strongswan) Server @ Docker
+# IKEv2 Strongswan VPN Docker Image
 
-A Docker image to help deploy [Strongswan](https://strongswan.org)-based IKEv2 VPN on an
-own server.
+A compact [Strongswan](https://strongswan.org) IKEv2 VPN Docker image based on
+[`bitnami/minideb`](https://hub.docker.com/r/bitnami/minideb) base image.
 
 By default, the minimum configuration is
 [CNSA Suite](https://apps.nsa.gov/iaarchive/programs/iad-initiatives/cnsa-suite.cfm)
 compliant.
 
 ## Usage
+
+This image is available as
+[`aeron/ikev2-strongswan-vpn`](https://hub.docker.com/r/aeron/ikev2-strongswan-vpn)
+from Docker Hub and
+[`ghcr.io/Aeron/ikev2-strongswan-vpn`](https://github.com/Aeron/ikev2-strongswan-vpn/pkgs/container/ikev2-strongswan-vpn)
+from GitHub Container Registry. You can use them both interchangeably.
+
+```sh
+docker pull aeron/ikev2-strongswan-vpn
+# …or…
+docker pull ghcr.io/aeron/ikev2-strongswan-vpn
+```
+
+### Container Running
 
 Run a container with the `--privileged` flag:
 
@@ -31,7 +45,7 @@ docker run -d --name ikev2-vpn --restart=always \
 **Note**: In this case, related [kernel parameters setup](#kernel-parameters) required
 before.
 
-### Shared secret
+### Shared Secret
 
 To get a shared secret only, use the following:
 

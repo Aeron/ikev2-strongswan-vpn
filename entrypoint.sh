@@ -48,8 +48,8 @@ start_ipsec() {
     sysctl -w net.ipv6.conf.all.forwarding=1
     sysctl -w net.ipv6.conf.eth0.proxy_ndp=1
 
-    iptables-restore < /etc/ipv4.nat.rules
-    ip6tables-restore < /etc/ipv6.nat.rules
+    iptables-legacy-restore < /etc/ipv4.nat.rules
+    ip6tables-legacy-restore < /etc/ipv6.nat.rules
 
     ndppd -c /etc/ndppd.conf -d
 

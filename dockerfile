@@ -1,8 +1,9 @@
-FROM debian:stretch-slim
+FROM bitnami/minideb:bullseye
 
-ENV LANG C.UTF-8
+LABEL org.opencontainers.image.source https://github.com/Aeron/ikev2-strongswan-vpn
+LABEL org.opencontainers.image.licenses MIT
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN install_packages \
     libstrongswan-standard-plugins \
     strongswan \
     iptables \
@@ -10,8 +11,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ndppd \
     ca-certificates \
     openssl
-
-RUN rm -rf /var/lib/apt/lists/*
 
 COPY etc/* /etc/
 COPY profiles/* /profiles/
