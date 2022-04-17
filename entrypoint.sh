@@ -5,20 +5,20 @@ compile_profile() {
         echo "\033[0;31mEnvironment variable HOST is required\033[0m" && \
         exit 1
 
-    PROFILE_NAME='IKEv2 VPN'
-    PROFILE_ID=$(echo "$HOST" | tr -s '.' '\n' | tac | tr -s '\n' '.' | head -c -1)
-    PROFILE_UUID=$(cat /proc/sys/kernel/random/uuid)
+    export PROFILE_NAME='IKEv2 VPN' \
+        PROFILE_ID=$(echo "$HOST" | tr -s '.' '\n' | tac | tr -s '\n' '.' | head -c -1) \
+        PROFILE_UUID=$(cat /proc/sys/kernel/random/uuid)
 
-    SERVICE_NAME='VPN (IKEv2)'
-    SERVICE_ID="$PROFILE_ID.shared-configuration"
-    SERVICE_UUID=$(cat /proc/sys/kernel/random/uuid)
+    export SERVICE_NAME='VPN (IKEv2)' \
+        SERVICE_ID="$PROFILE_ID.shared-configuration" \
+        SERVICE_UUID=$(cat /proc/sys/kernel/random/uuid)
 
-    REMOTE_ADDRESS=$HOST
-    REMOTE_ID=$HOST
+    export REMOTE_ADDRESS=$HOST \
+        REMOTE_ID=$HOST
 
     get_secret
 
-    eval "echo \"$(cat /profile.xml)\""
+    envsubst < /profile.xml 
 }
 
 get_secret() {
@@ -26,8 +26,7 @@ get_secret() {
         echo ": PSK '$(openssl rand -base64 32)'" > /etc/ipsec.secrets
     fi
 
-    SHARED_SECRET=$(cat /etc/ipsec.secrets | grep -oEi "[a-z0-9=+/]+" | tail -1)
-    export SHARED_SECRET
+    export SHARED_SECRET=$(cat /etc/ipsec.secrets | grep -oEi "[a-z0-9=+/]+" | tail -1)
 }
 
 show_secret() {
@@ -53,7 +52,7 @@ start_ipsec() {
 
 case "$1" in
     "profile")
-        compile_profile $2
+        compile_profile
         ;;
     "secret")
         show_secret

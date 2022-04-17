@@ -10,7 +10,8 @@ RUN install_packages \
     procps \
     ndppd \
     ca-certificates \
-    openssl
+    openssl \
+    gettext-base
 
 COPY etc/* /etc/
 COPY profile.xml /
