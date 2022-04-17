@@ -5,13 +5,6 @@ compile_profile() {
         echo "\033[0;31mEnvironment variable HOST is required\033[0m" && \
         exit 1
 
-    [ -z $1 ] && PROFILE="default" || PROFILE=$1
-
-    if [ ! -f /profiles/$PROFILE.xml ]; then
-        echo "\033[0;31mInvalid profile $PROFILE\033[0m"
-        exit 2
-    fi
-
     PROFILE_NAME='IKEv2 VPN'
     PROFILE_ID=$(echo "$HOST" | tr -s '.' '\n' | tac | tr -s '\n' '.' | head -c -1)
     PROFILE_UUID=$(cat /proc/sys/kernel/random/uuid)
@@ -25,7 +18,7 @@ compile_profile() {
 
     get_secret
 
-    eval "echo \"$(cat /profiles/$PROFILE.xml)\""
+    eval "echo \"$(cat /profile.xml)\""
 }
 
 get_secret() {

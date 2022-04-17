@@ -13,7 +13,7 @@ RUN install_packages \
     openssl
 
 COPY etc/* /etc/
-COPY profiles/* /profiles/
+COPY profile.xml /
 COPY entrypoint.sh .
 
 RUN rm /etc/ipsec.secrets
