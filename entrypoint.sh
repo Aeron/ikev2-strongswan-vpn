@@ -22,7 +22,7 @@ compile_profile() {
 }
 
 get_secret() {
-    if [ ! -f /etc/ipsec.secrets ]; then
+    if [ ! -f /etc/ipsec.secrets ] || [ ! -s /etc/ipsec.secrets ]; then
         echo ": PSK '$(openssl rand -base64 32)'" > /etc/ipsec.secrets
     fi
 
