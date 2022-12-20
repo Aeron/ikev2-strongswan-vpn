@@ -3,7 +3,7 @@
 <plist version="1.0">
     <dict>
         <key>PayloadDisplayName</key>
-        <string>${PROFILE_NAME}</string>
+        <string>${PROFILE_NAME} (${REMOTE_ADDRESS})</string>
         <key>PayloadDescription</key>
         <string>Configures VPN (IKEv2) settings for ${REMOTE_ADDRESS}</string>
         <key>PayloadIdentifier</key>
@@ -18,7 +18,7 @@
         <array>
             <dict>
                 <key>UserDefinedName</key>
-                <string>${SERVICE_NAME}</string>
+                <string>${SERVICE_NAME_ALT}</string>
                 <key>PayloadDisplayName</key>
                 <string>${SERVICE_NAME}</string>
                 <key>PayloadIdentifier</key>

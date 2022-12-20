@@ -5,20 +5,24 @@ compile_profile() {
         echo "\033[0;31mEnvironment variable HOST is required\033[0m" && \
         exit 1
 
-    export PROFILE_NAME='IKEv2 VPN' \
+    export \
+        PROFILE_NAME='IKEv2 VPN' \
         PROFILE_ID=$(echo "$HOST" | tr -s '.' '\n' | tac | tr -s '\n' '.' | head -c -1) \
         PROFILE_UUID=$(cat /proc/sys/kernel/random/uuid)
 
-    export SERVICE_NAME='VPN (IKEv2)' \
+    export \
+        SERVICE_NAME='VPN (IKEv2)' \
+        SERVICE_NAME_ALT=$HOST \
         SERVICE_ID="$PROFILE_ID.shared-configuration" \
         SERVICE_UUID=$(cat /proc/sys/kernel/random/uuid)
 
-    export REMOTE_ADDRESS=$HOST \
+    export \
+        REMOTE_ADDRESS=$HOST \
         REMOTE_ID=$HOST
 
     get_secret
 
-    envsubst < /profile.xml 
+    envsubst < /profile.xml
 }
 
 get_secret() {
