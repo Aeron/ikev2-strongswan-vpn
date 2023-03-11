@@ -48,6 +48,20 @@ docker run -d --name ikev2-vpn --restart=unless-stopped \
 **Note**: In this case, related [kernel parameters setup](#kernel-parameters) must be
 set before.
 
+#### Logging Mode
+
+The `LOGGING_MODE` environment variable could be convenient for setting a different
+logging level. It accepts the following values:
+
+- `zero` for almost silent logging;
+- `tiny` for only necessary info;
+- `some` for standard logging and errors.
+
+Unset value behaves as `some`, yet adds debugging for `cfg`, `ike`, and `net`
+subsystems.
+
+For finer tuning better to mount a custom `/etc/strongswan.conf`.
+
 ### Entrypoint Options
 
 The entrypoint script supports the following commands and parameters:
@@ -157,7 +171,7 @@ docker run -it --rm --volumes-from ikev2-vpn \
 Replace the `example.com` with the desired domain name; an IP address may be used
 instead as well. The `HOST` environment variable is required.
 
-If there’s a need to identify different clients, then `LOCAL_ID` value could be
+If there is a need to identify different clients, then `LOCAL_ID` value could be
 supplied:
 
 ```sh
@@ -179,13 +193,33 @@ Copy a resulting `ikev2-vpn.mobileconfig` file on a macOS machine, then add it b
 double-click, or transfer it on an iOS device via AirDrop. Also, it can be stored
 in iCloud Files, and added from there.
 
-To install it, search “Profile” in a device settings. It’ll display all profiles
+To install it, search “Profile” in a device settings. It will display all profiles
 waiting to be installed. Simply proceed from there: click on a profile, then click
 “install”, and authorize it. As a result, there must be a new VPN added with a
 familiar name.
 
 To remove a VPN service, search “Profile” in a device settings, then delete a
 previously installed profile.
+
+#### UUIDs Persistency
+
+To avoid reproducing excessive profiles and VPN services on a device, profile/service
+UUIDs can be saved/restored by mounting volumes `/profile.uuid` and `/service.uuid`,
+like so:
+
+```sh
+docker run -it --rm --volumes-from ikev2-vpn \
+    -e HOST=example.com \
+    -v /path/to/profile.uuid:/profile.uuid \
+    -v /path/to/service.uuid:/service.uuid \
+    aeron/ikev2-strongswan-vpn:latest \
+    profile > ikev2-vpn.mobileconfig
+```
+
+It will generate new UUIDs once and re-use them next time.
+
+**Note**: such volumes also can be mounted for a main container somewhat permanently.
+Then there will be no need to specify it for the profile compilation.
 
 ## Caveats
 
@@ -216,7 +250,7 @@ Running container logs may contain something similar to this:
 ip6tables-restore: unable to initialize table 'nat'
 ```
 
-Probably, Docker doesn’t load a proper kernel module for IPv6 NAT, so it will be
+Probably, Docker does not load a proper kernel module for IPv6 NAT, so it will be
 necessary to run `modprobe` first:
 
 ```sh
