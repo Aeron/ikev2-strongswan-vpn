@@ -65,12 +65,25 @@ get_psk() {
     | tr -d '"'
 }
 
+set_psk_id() {
+    KEY=$(get_psk "$1")
+
+    printf \
+        'ike-%s {\n    id = "%s"\n    secret = "%s"\n}\n' \
+        "$1" "$1" "$KEY" \
+    > /etc/swanctl/conf.d/psk-"$1".conf
+}
+
 gen_psk() {
     openssl rand -base64 32
 }
 
 gen_uuid() {
     cat /proc/sys/kernel/random/uuid
+}
+
+strip_name() {
+    echo "$1" | tr '@&+.:' '-' | tr -d '=!%^#$\/()[]{}|;<>, ' | xargs
 }
 
 migrate_psk() {
@@ -82,6 +95,7 @@ migrate_psk() {
 
     for PAIR in $PAIRS; do
         ID=$(echo "$PAIR" | cut -d ":" -f1)
+        ID=$(strip_name "$ID")
         KEY=$(echo "$PAIR" | cut -d ":" -f2)
 
         [ -z "$ID" ] && ID=default
@@ -145,7 +159,7 @@ start_strongswan() {
     wait $(jobs -p)
 }
 
-set -- "$1" "$(echo "$2" | tr '@&+.:' '-' | tr -d '=!%^#$\/()[]{}|;<>, ' | xargs)"
+set -- "$1" "$(strip_name "$2")"
 
 if [ -z "$2" ]; then
     set -- "$1" default
@@ -155,16 +169,17 @@ fi
 HELP='Usage: /entrypoint.sh [COMMAND [<NAME>]]
 
 Commands:
-  add-psk  Add a new PSK credential
-  get-psk  Print a secret for a PSK credential
-  del-psk  Delete a PSK credential
-  profile  Print a device management profile for macOS/iOS
-           [requires: $HOST]
-  start    Start the charon-systemd
+  add-psk     Add a new PSK credential
+  get-psk     Print a secret for a PSK credential
+  del-psk     Delete a PSK credential
+  set-psk-id  Enforce an ID usage for a PSK credential
+  profile     Print a device management profile for macOS/iOS
+              [requires: $HOST]
+  start       Start the charon-systemd
 
 Parameters:
-  <NAME>   A desired PSK credential name
-           [default: "default"]
+  <NAME>      A desired PSK credential name
+              [default: "default"]
 '
 
 case "$1" in
@@ -181,6 +196,10 @@ case "$1" in
         ;;
     'get-psk')
         get_psk "$2"
+        ;;
+    'set-psk-id')
+        set_psk_id "$2"
+        swanctl --load-creds --clear --noprompt
         ;;
     'start')
         start_strongswan

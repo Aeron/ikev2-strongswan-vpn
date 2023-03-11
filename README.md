@@ -70,16 +70,17 @@ The entrypoint script supports the following commands and parameters:
 Usage: /entrypoint.sh [COMMAND [<NAME>]]
 
 Commands:
-  add-psk  Add a new PSK credential
-  get-psk  Print a secret for a PSK credential
-  del-psk  Delete a PSK credential
-  profile  Print a device management profile for macOS/iOS
-           [requires: $HOST]
-  start    Start the charon-systemd
+  add-psk     Add a new PSK credential
+  get-psk     Print a secret for a PSK credential
+  del-psk     Delete a PSK credential
+  set-psk-id  Enforce an ID usage for a PSK credential
+  profile     Print a device management profile for macOS/iOS
+              [requires: $HOST]
+  start       Start the charon-systemd
 
 Parameters:
-  <NAME>   A desired PSK credential name
-           [default: "default"]
+  <NAME>      A desired PSK credential name
+              [default: "default"]
 ```
 
 ### PSK Credentials
