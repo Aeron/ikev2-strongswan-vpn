@@ -157,6 +157,13 @@ If you already migrated a configuration but do not want to remove or unmount
 `/etc/ipsec.secrets` yet, it is possible to disable auto-migration, by unsetting the
 `IPSEC_AUTO_MIGRATE` environment variable.
 
+**Important**: The resulting `/etc/swanctl/conf.d/psk-*.conf` files will not include
+IKE-PSK ID fields because—before [version 23.0][release-23]—compiled profiles never
+strictly addressed the remote ID field. So a client’s remote ID will be treated
+as `%any`.
+
+[release-23]: https://github.com/Aeron/ikev2-strongswan-vpn/releases/tag/23.0
+
 ### Device Management Profile
 
 To generate a `.mobileconfig` file for macOS/iOS, run the following:
@@ -189,13 +196,13 @@ simple name suits as well.
 
 #### (Un)Installation
 
-Copy a resulting `ikev2-vpn.mobileconfig` file on a macOS machine, then add it by
-double-click, or transfer it on an iOS device via AirDrop. Also, it can be stored
-in iCloud Files, and added from there.
+Copy the resulting `ikev2-vpn.mobileconfig` file on a macOS machine, then add it by
+double-clicking. Or transfer it on an iOS device via AirDrop. Also, it can be stored
+in iCloud Files and added from there.
 
-To install it, search “Profile” in a device settings. It will display all profiles
-waiting to be installed. Simply proceed from there: click on a profile, then click
-“install”, and authorize it. As a result, there must be a new VPN added with a
+To install it, search “Profile” in the device settings. It will display all profiles
+waiting for installation. Proceed from there: click on a profile, then click an
+“install” button, and authorize it. As a result, there must be a new VPN added with a
 familiar name.
 
 To remove a VPN service, search “Profile” in a device settings, then delete a
