@@ -28,6 +28,7 @@ VOLUME /var/run
 
 EXPOSE 500/udp 4500/udp
 
+ENV LOGGING_MODE ''
 ENV IPSEC_AUTO_MIGRATE 1
 
 ENTRYPOINT [ "/entrypoint.sh" ]

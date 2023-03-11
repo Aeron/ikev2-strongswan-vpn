@@ -2,7 +2,7 @@
 
 compile_profile() {
     [ -z "$HOST" ] \
-    && echo 'error: variable HOST cannot be empty' \
+    && echo 'error: variable HOST must have a value' \
     && exit 1
 
     PROFILE_NAME='IKEv2 VPN' \
@@ -81,10 +81,33 @@ migrate_psk() {
         add_psk "$ID" "$KEY"
 
         echo "migration: PSK secret moved into /etc/swanctl/conf.d/psk-$ID.conf"
-        echo "migration: consider to remove /etc/ipsec.secrets"
+        echo 'migration: consider to remove /etc/ipsec.secrets'
     done
 
     # echo "" > /etc/ipsec.secrets
+}
+
+set_logging_mode() {
+    [ ! -w /etc/strongswan.conf ] \
+    && echo 'error: /etc/strongswan.conf is not writable' \
+    && exit 1
+
+    case "$LOGGING_MODE" in
+        'zero') LEVEL=-1;;
+        'tiny') LEVEL=0;;
+        'some') LEVEL=1;;
+        *)
+            echo 'error: variable LOGGING_MODE must be "zero", "tiny", "some", or unset'
+            exit 1
+        ;;
+    esac
+
+    for s in default app asn cfg dmn enc esp ike imc imv job knl lib mgr net pts tls tnc
+    do
+        sed -ie "s/$s = \S*$/$s = $LEVEL/g" /etc/strongswan.conf
+    done
+
+    echo "logging: $LOGGING_MODE mode"
 }
 
 start_strongswan() {
@@ -95,6 +118,8 @@ start_strongswan() {
 
     iptables-legacy-restore < /etc/ipv4.nat.rules
     ip6tables-legacy-restore < /etc/ipv6.nat.rules
+
+    [ -n "$LOGGING_MODE" ] && set_logging_mode
 
     # NOTE: a bit ugly but having systemctl is excessive
     charon-systemd &
