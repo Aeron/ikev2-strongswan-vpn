@@ -23,11 +23,7 @@ compile_profile() {
     SERVICE_UUID=$(cat /service.uuid)
 
     REMOTE_ADDRESS=$HOST
-    REMOTE_ID=$HOST
-
-    if [ -z "$LOCAL_ID" ];then
-        LOCAL_ID=$1
-    fi
+    REMOTE_ID=$1
 
     SHARED_SECRET=$(get_psk "$1")
 
