@@ -54,7 +54,7 @@ The `LOGGING_MODE` environment variable could be convenient for setting a differ
 logging level. It accepts the following values:
 
 - `zero` for almost silent logging;
-- `tiny` for only necessary info;
+- `less` for only necessary info;
 - `some` for standard logging and errors.
 
 Unset value behaves as `some`, yet adds debugging for `cfg`, `ike`, and `net`

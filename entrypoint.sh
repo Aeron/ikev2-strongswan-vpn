@@ -106,10 +106,10 @@ set_logging_mode() {
 
     case "$LOGGING_MODE" in
         'zero') LEVEL=-1;;
-        'tiny') LEVEL=0;;
+        'less') LEVEL=0;;
         'some') LEVEL=1;;
         *)
-            echo 'error: variable LOGGING_MODE must be "zero", "tiny", "some", or unset'
+            echo 'error: variable LOGGING_MODE must be "zero", "less", "some", or unset'
             exit 1
         ;;
     esac
