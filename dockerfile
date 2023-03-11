@@ -1,4 +1,4 @@
-FROM bitnami/minideb:bullseye
+FROM docker.io/bitnami/minideb:bullseye
 
 LABEL org.opencontainers.image.source https://github.com/Aeron/ikev2-strongswan-vpn
 LABEL org.opencontainers.image.licenses MIT
@@ -16,7 +16,7 @@ RUN install_packages \
 
 COPY etc/swanctl.conf /etc/swanctl/swanctl.conf
 COPY etc/strongswan.conf /etc/strongswan.conf
-COPY *.rules /etc/
+COPY etc/*.rules /etc/
 
 COPY profile.xml .
 COPY entrypoint.sh .
