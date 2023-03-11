@@ -218,7 +218,7 @@ docker run -it --rm --volumes-from ikev2-vpn \
 
 It will generate new UUIDs once and re-use them next time.
 
-**Note**: such volumes also can be mounted for a main container somewhat permanently.
+**Note**: Such volumes also can be mounted for a main container somewhat permanently.
 Then there will be no need to specify it for the profile compilation.
 
 ## Caveats
