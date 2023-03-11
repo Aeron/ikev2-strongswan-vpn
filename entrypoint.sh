@@ -5,14 +5,22 @@ compile_profile() {
     && echo 'error: variable HOST must have a value' \
     && exit 1
 
-    PROFILE_NAME='IKEv2 VPN' \
-    PROFILE_ID=$(echo "$HOST" | tr -s '.' '\n' | tac | tr -s '\n' '.' | head -c -1) \
-    PROFILE_UUID=$(cat /proc/sys/kernel/random/uuid)
+    if [ ! -f /profile.uuid ] || [ ! -s /profile.uuid ]; then
+        gen_uuid > /profile.uuid
+    fi
+
+    if [ ! -f /service.uuid ] || [ ! -s /service.uuid ]; then
+        gen_uuid > /service.uuid
+    fi
+
+    PROFILE_NAME='IKEv2 VPN'
+    PROFILE_ID=$(echo "$HOST" | tr -s '.' '\n' | tac | tr -s '\n' '.' | head -c -1)
+    PROFILE_UUID=$(cat /profile.uuid)
 
     SERVICE_NAME='VPN (IKEv2)'
     SERVICE_NAME_ALT=$HOST
     SERVICE_ID="$PROFILE_ID.shared-configuration"
-    SERVICE_UUID=$(cat /proc/sys/kernel/random/uuid)
+    SERVICE_UUID=$(cat /service.uuid)
 
     REMOTE_ADDRESS=$HOST
     REMOTE_ID=$HOST
@@ -63,6 +71,10 @@ get_psk() {
 
 gen_psk() {
     openssl rand -base64 32
+}
+
+gen_uuid() {
+    cat /proc/sys/kernel/random/uuid
 }
 
 migrate_psk() {
