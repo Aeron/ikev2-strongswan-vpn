@@ -1,45 +1,94 @@
 #!/bin/sh
 
 compile_profile() {
-    [ -z $HOST ] && \
-        echo "\033[0;31mEnvironment variable HOST is required\033[0m" && \
-        exit 1
+    [ -z "$HOST" ] \
+    && echo 'error: variable HOST cannot be empty' \
+    && exit 1
+
+    PROFILE_NAME='IKEv2 VPN' \
+    PROFILE_ID=$(echo "$HOST" | tr -s '.' '\n' | tac | tr -s '\n' '.' | head -c -1) \
+    PROFILE_UUID=$(cat /proc/sys/kernel/random/uuid)
+
+    SERVICE_NAME='VPN (IKEv2)'
+    SERVICE_NAME_ALT=$HOST
+    SERVICE_ID="$PROFILE_ID.shared-configuration"
+    SERVICE_UUID=$(cat /proc/sys/kernel/random/uuid)
+
+    REMOTE_ADDRESS=$HOST
+    REMOTE_ID=$HOST
+
+    if [ -z "$LOCAL_ID" ];then
+        LOCAL_ID=$1
+    fi
+
+    SHARED_SECRET=$(get_psk "$1")
 
     export \
-        PROFILE_NAME='IKEv2 VPN' \
-        PROFILE_ID=$(echo "$HOST" | tr -s '.' '\n' | tac | tr -s '\n' '.' | head -c -1) \
-        PROFILE_UUID=$(cat /proc/sys/kernel/random/uuid)
-
-    export \
-        SERVICE_NAME='VPN (IKEv2)' \
-        SERVICE_NAME_ALT=$HOST \
-        SERVICE_ID="$PROFILE_ID.shared-configuration" \
-        SERVICE_UUID=$(cat /proc/sys/kernel/random/uuid)
-
-    export \
-        REMOTE_ADDRESS=$HOST \
-        REMOTE_ID=$HOST
-
-    get_secret
+        PROFILE_NAME \
+        PROFILE_ID \
+        PROFILE_UUID \
+        SERVICE_NAME \
+        SERVICE_NAME_ALT \
+        SERVICE_ID \
+        SERVICE_UUID \
+        REMOTE_ADDRESS \
+        REMOTE_ID \
+        LOCAL_ID \
+        SHARED_SECRET
 
     envsubst < /profile.xml
 }
 
-get_secret() {
-    if [ ! -f /etc/ipsec.secrets ] || [ ! -s /etc/ipsec.secrets ]; then
-        echo ": PSK '$(openssl rand -base64 32)'" > /etc/ipsec.secrets
+add_psk() {
+    KEY=$(echo "$2" | xargs)
+
+    if [ -z "$KEY" ]; then
+        KEY=$(gen_psk)
     fi
 
-    export SHARED_SECRET=$(cat /etc/ipsec.secrets | grep -oEi "[a-z0-9=+/]+" | tail -1)
+    printf 'ike-%s {\n    secret = "%s"\n}\n' "$1" "$KEY" \
+    > /etc/swanctl/conf.d/psk-"$1".conf
 }
 
-show_secret() {
-    get_secret
-
-    echo "\033[0;36mSecret: $SHARED_SECRET\033[0m"
+del_psk() {
+    rm /etc/swanctl/conf.d/psk-"$1".conf
 }
 
-start_ipsec() {
+get_psk() {
+    grep -oEi 'secret.+' /etc/swanctl/conf.d/psk-"$1".conf \
+    | grep -oEi '"[a-z0-9=+/]+"' \
+    | head -1 \
+    | tr -d '"'
+}
+
+gen_psk() {
+    openssl rand -base64 32
+}
+
+migrate_psk() {
+    PAIRS=$(
+        grep -oEi '^(.+)?:\sPSK\s.([a-z0-9=+/]+).' /etc/ipsec.secrets \
+        | tr -s ' PSK ' '#' \
+        | tr -d " #'\""
+    )
+
+    for PAIR in $PAIRS; do
+        ID=$(echo "$PAIR" | cut -d ":" -f1)
+        KEY=$(echo "$PAIR" | cut -d ":" -f2)
+
+        [ -z "$ID" ] && ID=default
+
+        add_psk "$ID" "$KEY"
+
+        echo "migration: PSK secret moved into /etc/swanctl/conf.d/psk-$ID.conf"
+        echo "migration: consider to remove /etc/ipsec.secrets"
+    done
+
+    # echo "" > /etc/ipsec.secrets
+}
+
+start_strongswan() {
+    # NOTE: sysctl requires privileged mode
     sysctl -w net.ipv4.ip_forward=1
     sysctl -w net.ipv6.conf.all.forwarding=1
     sysctl -w net.ipv6.conf.eth0.proxy_ndp=1
@@ -47,21 +96,63 @@ start_ipsec() {
     iptables-legacy-restore < /etc/ipv4.nat.rules
     ip6tables-legacy-restore < /etc/ipv6.nat.rules
 
-    ndppd -c /etc/ndppd.conf -d
+    # NOTE: a bit ugly but having systemctl is excessive
+    charon-systemd &
+    sleep 5
+    swanctl --load-all --noprompt
 
-    rm -f /var/run/starter.charon.pid
+    # NOTE: it will try to migrate existing ipsec.secrets automatically
+    [ -n "$IPSEC_AUTO_MIGRATE" ] \
+    && [ -f /etc/ipsec.secrets ] \
+    && [ -s /etc/ipsec.secrets ] \
+    && migrate_psk \
+    && swanctl --load-creds --noprompt
 
-    ipsec start --nofork
+    # shellcheck disable=SC2046
+    wait $(jobs -p)
 }
 
+set -- "$1" "$(echo "$2" | tr '@&+.:' '-' | tr -d '=!%^#$\/()[]{}|;<>, ' | xargs)"
+
+if [ -z "$2" ]; then
+    set -- "$1" default
+fi
+
+# shellcheck disable=SC2016
+HELP='Usage: /entrypoint.sh [COMMAND [<NAME>]]
+
+Commands:
+  add-psk  Add a new PSK credential
+  get-psk  Print a secret for a PSK credential
+  del-psk  Delete a PSK credential
+  profile  Print a device management profile for macOS/iOS
+           [requires: $HOST]
+  start    Start the charon-systemd
+
+Parameters:
+  <NAME>   A desired PSK credential name
+           [default: "default"]
+'
+
 case "$1" in
-    "profile")
-        compile_profile
+    'profile')
+        compile_profile "$2"
         ;;
-    "secret")
-        show_secret
+    'add-psk')
+        add_psk "$2"
+        swanctl --load-creds --noprompt
+        ;;
+    'del-psk')
+        del_psk "$2"
+        swanctl --load-creds --clear --noprompt
+        ;;
+    'get-psk')
+        get_psk "$2"
+        ;;
+    'start')
+        start_strongswan
         ;;
     *)
-        start_ipsec
+        echo "$HELP"
         ;;
 esac
