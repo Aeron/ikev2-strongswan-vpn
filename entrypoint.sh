@@ -180,6 +180,7 @@ Commands:
   profile     Print a device management profile for macOS/iOS
               [requires: $HOST]
   start       Start the charon-systemd
+              [default]
 
 Parameters:
   <NAME>      A desired PSK credential name
