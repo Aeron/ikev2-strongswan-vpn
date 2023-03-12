@@ -18,7 +18,7 @@ COPY etc/swanctl.conf /etc/swanctl/swanctl.conf
 COPY etc/strongswan.conf /etc/strongswan.conf
 COPY etc/*.rules /etc/
 
-COPY profile.xml .
+COPY profile-*.xml /
 COPY entrypoint.sh .
 
 RUN echo "" > /etc/ipsec.secrets

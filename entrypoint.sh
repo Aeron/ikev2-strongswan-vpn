@@ -1,6 +1,6 @@
 #!/bin/sh
 
-compile_profile() {
+compile_profile_psk() {
     [ -z "$HOST" ] \
     && echo 'error: variable HOST must have a value' \
     && exit 1
@@ -44,7 +44,7 @@ compile_profile() {
         LOCAL_ID \
         SHARED_SECRET
 
-    envsubst < /profile.xml
+    envsubst < /profile-psk.xml
 }
 
 add_psk() {
@@ -173,24 +173,21 @@ fi
 HELP='Usage: /entrypoint.sh [COMMAND [<NAME>]]
 
 Commands:
-  add-psk     Add a new PSK credential
-  get-psk     Print a secret for a PSK credential
-  del-psk     Delete a PSK credential
-  set-psk-id  Enforce an ID usage for a PSK credential
-  profile     Print a device management profile for macOS/iOS
-              [requires: $HOST]
-  start       Start the charon-systemd
-              [default]
+  add-psk      Add a new PSK credential
+  get-psk      Print a secret for a PSK credential
+  del-psk      Delete a PSK credential
+  set-psk-id   Enforce an ID usage for a PSK credential
+  profile-psk  Print a PSK device management profile for macOS/iOS
+               [requires: $HOST]
+  start        Start the charon-systemd
+               [default]
 
 Parameters:
-  <NAME>      A desired PSK credential name
-              [default: "default"]
+  <NAME>       A desired PSK credential name
+               [default: "default"]
 '
 
 case "$1" in
-    'profile')
-        compile_profile "$2"
-        ;;
     'add-psk')
         add_psk "$2"
         swanctl --load-creds --noprompt
@@ -205,6 +202,9 @@ case "$1" in
     'set-psk-id')
         set_psk_id "$2"
         swanctl --load-creds --clear --noprompt
+        ;;
+    'profile-psk')
+        compile_profile_psk "$2"
         ;;
     'start')
         start_strongswan

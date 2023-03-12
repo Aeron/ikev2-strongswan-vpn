@@ -70,17 +70,18 @@ The entrypoint script supports the following commands and parameters:
 Usage: /entrypoint.sh [COMMAND [<NAME>]]
 
 Commands:
-  add-psk     Add a new PSK credential
-  get-psk     Print a secret for a PSK credential
-  del-psk     Delete a PSK credential
-  set-psk-id  Enforce an ID usage for a PSK credential
-  profile     Print a device management profile for macOS/iOS
-              [requires: $HOST]
-  start       Start the charon-systemd
+  add-psk      Add a new PSK credential
+  get-psk      Print a secret for a PSK credential
+  del-psk      Delete a PSK credential
+  set-psk-id   Enforce an ID usage for a PSK credential
+  profile-psk  Print a PSK device management profile for macOS/iOS
+               [requires: $HOST]
+  start        Start the charon-systemd
+               [default]
 
 Parameters:
-  <NAME>      A desired PSK credential name
-              [default: "default"]
+  <NAME>       A desired PSK credential name
+               [default: "default"]
 ```
 
 ### PSK Credentials
@@ -173,7 +174,7 @@ To generate a `.mobileconfig` file for macOS/iOS, run the following:
 docker run -it --rm --volumes-from ikev2-vpn \
     -e HOST=example.com \
     aeron/ikev2-strongswan-vpn:latest \
-    profile > ikev2-vpn.mobileconfig
+    profile-psk > ikev2-vpn.mobileconfig
 ```
 
 Replace the `example.com` with the desired domain name; an IP address may be used
@@ -187,7 +188,7 @@ docker run -it --rm --volumes-from ikev2-vpn \
     -e HOST=example.com \
     -e LOCAL_ID=john.example.com \
     aeron/ikev2-strongswan-vpn:latest \
-    profile > ikev2-vpn.mobileconfig
+    profile-psk > ikev2-vpn.mobileconfig
 ```
 
 Usually, the `LOCAL_ID` should be an IP address, FQDN, UserFQDN, or ASN1DN, but a
@@ -221,7 +222,7 @@ docker run -it --rm --volumes-from ikev2-vpn \
     -v /path/to/profile.uuid:/profile.uuid \
     -v /path/to/service.uuid:/service.uuid \
     aeron/ikev2-strongswan-vpn:latest \
-    profile > ikev2-vpn.mobileconfig
+    profile-psk > ikev2-vpn.mobileconfig
 ```
 
 It will generate new UUIDs once and re-use them next time.
