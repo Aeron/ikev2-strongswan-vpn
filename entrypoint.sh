@@ -25,6 +25,10 @@ compile_profile() {
     REMOTE_ADDRESS=$HOST
     REMOTE_ID=$1
 
+    if [ -z "$LOCAL_ID" ];then
+        LOCAL_ID=$1
+    fi
+
     SHARED_SECRET=$(get_psk "$1")
 
     export \
