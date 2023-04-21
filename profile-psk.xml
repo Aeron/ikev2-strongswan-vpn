@@ -79,10 +79,16 @@
                 <dict>
                     <key>ServerAddresses</key>
                     <array>
+                        <!-- Cloudflare -->
                         <string>1.1.1.1</string>
                         <string>1.0.0.1</string>
                         <string>2606:4700:4700::1111</string>
                         <string>2606:4700:4700::1001</string>
+                        <!-- Quad9 -->
+                        <string>9.9.9.9</string>
+                        <string>149.112.112.112</string>
+                        <string>2620:fe::fe</string>
+                        <string>2620:fe::9</string>
                     </array>
                 </dict>
             </dict>
