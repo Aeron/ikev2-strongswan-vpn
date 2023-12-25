@@ -1,6 +1,6 @@
 # IKEv2 Strongswan VPN Docker Image
 
-A compact [Strongswan][strongswan] IKEv2 VPN Docker image based on
+A compact [Strongswan][strongswan] IKEv2 VPN container image based on
 [`bitnami/minideb`][minideb] base image.
 
 By default, the minimum configuration is [CNSA Suite][cnsa] compliant.
@@ -45,8 +45,9 @@ docker run -d --name ikev2-vpn --restart=unless-stopped \
     aeron/ikev2-strongswan-vpn:latest
 ```
 
-**Note**: In this case, related [kernel parameters setup](#kernel-parameters) must be
-set before.
+> [!NOTE]
+> In this case, related [kernel parameters setup](#kernel-parameters) must be
+> set before.
 
 #### Logging Mode
 
@@ -67,7 +68,7 @@ For finer tuning better to mount a custom `/etc/strongswan.conf`.
 The entrypoint script supports the following commands and parameters:
 
 ```text
-Usage: /entrypoint.sh [COMMAND [<NAME>]]
+Usage: /entrypoint.sh [COMMAND [NAME]]
 
 Commands:
   add-psk      Add a new PSK credential
@@ -80,7 +81,7 @@ Commands:
                [default]
 
 Parameters:
-  <NAME>       A desired PSK credential name
+  NAME         A desired PSK credential name
                [default: "default"]
 ```
 
@@ -93,7 +94,9 @@ To add, get, or delete a pre-shared key, use the following command pattern:
 ```sh
 docker run -it --rm --volumes-from ikev2-vpn \
     aeron/ikev2-strongswan-vpn:latest \
-    COMMAND [<NAME>]
+    COMMAND [NAME]
+# …or…
+docker exec -it ikev2-vpn /entrypoint.sh COMMAND [NAME]
 ```
 
 Supported commands and parameters are described [above](#entrypoint-options).
@@ -108,6 +111,9 @@ docker run -it --rm --volumes-from ikev2-vpn \
 docker run -it --rm --volumes-from ikev2-vpn \
     aeron/ikev2-strongswan-vpn:latest \
     get-psk
+# …or…
+docker exec -it ikev2-vpn /entrypoint.sh add-psk
+docker exec -it ikev2-vpn /entrypoint.sh get-psk
 ```
 
 It will create a new PSK credetial and display it. If you want a one-click solution
@@ -131,7 +137,7 @@ Simply replace the `/your/local/path` with a desired directory path.
 
 #### Migration
 
-There is a auto-migration support for prior-`swanctl` deployments.
+There is an auto-migration support for prior-`swanctl` deployments.
 
 If PSK credentials are still stored in `/etc/ipsec.secrets`, entrypoint script will
 try to migrate them to separate `/etc/swanctl/conf.d/psk-*.conf` files.
@@ -146,23 +152,25 @@ docker run -d --name ikev2-vpn --restart=unless-stopped \
     -p 500:500/udp \
     -p 4500:4500/udp \
     -v /path/to/old/ipsec.secrets:/etc/ipsec.secrets:ro \
-    -v /path/to/new/config:/etc/swanctl/conf.d:rw \
+    -v /path/to/new/config/dir:/etc/swanctl/conf.d:rw \
     aeron/ikev2-strongswan-vpn:latest
 ```
 
 It will guarantee you have a migrated configuration safely stored.
 
-**Important**: Before removing an older configuration, verify that secrets in both
-configurations are the same.
+> [!IMPORTANT]
+> Before removing an older configuration, verify that secrets in both
+> configurations are the same.
 
-If you already migrated a configuration but do not want to remove or unmount
-`/etc/ipsec.secrets` yet, it is possible to disable auto-migration, by unsetting the
-`IPSEC_AUTO_MIGRATE` environment variable.
+> [!NOTE]
+> If you already migrated a configuration but do not want to remove or unmount
+> `/etc/ipsec.secrets` yet, it is possible to disable auto-migration, by unsetting
+> the `IPSEC_AUTO_MIGRATE` environment variable.
 
-**Important**: The resulting `/etc/swanctl/conf.d/psk-*.conf` files will not include
-IKE-PSK ID fields because—before [version 23.0][release-23]—compiled profiles never
-strictly addressed the remote ID field. So a client’s remote ID will be treated
-as `%any`.
+> [!IMPORTANT]
+> The resulting `/etc/swanctl/conf.d/psk-*.conf` files will not include IKE-PSK ID
+> fields because profiles compiled before [version 23.0][release-23] never strictly
+> addressed the remote ID field. So a client’s remote ID will be treated as `%any`.
 
 [release-23]: https://github.com/Aeron/ikev2-strongswan-vpn/releases/tag/23.0
 
@@ -175,6 +183,11 @@ docker run -it --rm --volumes-from ikev2-vpn \
     -e HOST=example.com \
     aeron/ikev2-strongswan-vpn:latest \
     profile-psk > ikev2-vpn.mobileconfig
+# …or…
+docker exec -it \
+    -e HOST=example.com \
+    ikev2-vpn \
+    /entrypoint.sh profile-psk > ikev2-vpn.mobileconfig
 ```
 
 Replace the `example.com` with the desired domain name; an IP address may be used
@@ -189,12 +202,20 @@ docker run -it --rm --volumes-from ikev2-vpn \
     -e LOCAL_ID=john.example.com \
     aeron/ikev2-strongswan-vpn:latest \
     profile-psk > ikev2-vpn.mobileconfig
+# …or…
+docker exec -it \
+    -e HOST=example.com \
+    -e LOCAL_ID=john.example.com \
+    ikev2-vpn \
+    /entrypoint.sh profile-psk > ikev2-vpn.mobileconfig
 ```
 
 Usually, the `LOCAL_ID` should be an IP address, FQDN, UserFQDN, or ASN1DN, but a
 simple name suits as well.
 
-**Important**: The `LOCAL_ID` must be unique for each simultaneous connection.
+> [!IMPORTANT]
+> The `LOCAL_ID` (or a combo of local and remote identifiers) must be unique for
+> each simultaneous connection.
 
 #### (Un)Installation
 
@@ -223,12 +244,21 @@ docker run -it --rm --volumes-from ikev2-vpn \
     -v /path/to/service.uuid:/service.uuid \
     aeron/ikev2-strongswan-vpn:latest \
     profile-psk > ikev2-vpn.mobileconfig
+# …or…
+docker exec -it \
+    -e HOST=example.com \
+    -v /path/to/profile.uuid:/profile.uuid \
+    -v /path/to/service.uuid:/service.uuid \
+    ikev2-vpn \
+    /entrypoint.sh profile-psk > ikev2-vpn.mobileconfig
 ```
 
 It will generate new UUIDs once and re-use them next time.
 
-**Note**: Such volumes also can be mounted for a main container somewhat permanently.
-Then there will be no need to specify it for the profile compilation.
+> [!NOTE]
+> Such volumes also can be mounted for [a main container](#container-running)
+> somewhat permanently. Then there will be no need to specify it for the profile
+> compilation.
 
 ## Caveats
 
@@ -250,6 +280,21 @@ echo net.ipv4.ip_forward=1 | sudo tee /etc/sysctl.d/network-tune.conf
 echo net.ipv6.conf.all.forwarding=1 | sudo tee /etc/sysctl.d/network-tune.conf
 echo net.ipv6.conf.eth0.proxy_ndp=1 | sudo tee /etc/sysctl.d/network-tune.conf
 ```
+
+Or use [`--sysctl` options][sysctl] to specify it at runtime:
+
+```sh
+docker run -d --name ikev2-vpn --restart=unless-stopped \
+    --cap-add net_admin \
+    --sysctl net.ipv4.ip_forward=1 \
+    --sysctl net.ipv6.conf.all.forwarding=1 \
+    --sysctl net.ipv6.conf.eth0.proxy_ndp=1 \
+    -p 500:500/udp \
+    -p 4500:4500/udp \
+    aeron/ikev2-strongswan-vpn:latest
+```
+
+[sysctl]: https://docs.docker.com/engine/reference/commandline/run/#sysctl
 
 ### Kernel Modules
 
