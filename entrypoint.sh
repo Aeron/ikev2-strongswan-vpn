@@ -188,6 +188,44 @@ set_logging_mode() {
     echo "logging: $LOGGING_MODE mode"
 }
 
+wait_for_charon() {
+    local timeout=30
+    local elapsed=0
+    local vici_socket="/var/run/charon.vici"
+
+    echo "charon: waiting for daemon to be ready..."
+
+    # First, wait for the socket to exist
+    while [ $elapsed -lt $timeout ]; do
+        if [ -S "$vici_socket" ]; then
+            break
+        fi
+        sleep 1
+        elapsed=$((elapsed + 1))
+    done
+
+    if [ $elapsed -ge $timeout ]; then
+        echo "error: charon vici socket not available within ${timeout}s" >&2
+        return 1
+    fi
+
+    echo "charon: vici socket available, verifying communication..."
+
+    # Now verify we can actually communicate with charon
+    elapsed=0
+    while [ $elapsed -lt $timeout ]; do
+        if swanctl --stats >/dev/null 2>&1; then
+            echo "charon: ready and responding to commands"
+            return 0
+        fi
+        sleep 1
+        elapsed=$((elapsed + 1))
+    done
+
+    echo "error: charon not responding to commands within ${timeout}s" >&2
+    return 1
+}
+
 start_strongswan() {
     # NOTE: sysctl requires privileged mode
     # Check current value first to avoid errors in non-privileged mode
@@ -229,8 +267,16 @@ start_strongswan() {
 
     # NOTE: a bit ugly but having systemctl is excessive
     charon-systemd &
-    sleep 5
-    swanctl --load-all --noprompt
+
+    if ! wait_for_charon; then
+        echo "error: failed to start charon-systemd" >&2
+        exit 1
+    fi
+
+    if ! swanctl --load-all --noprompt; then
+        echo "error: failed to load swanctl configuration" >&2
+        exit 1
+    fi
 
     # NOTE: it will try to migrate existing ipsec.secrets automatically
     if [ -n "$IPSEC_AUTO_MIGRATE" ] \
