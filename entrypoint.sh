@@ -1,17 +1,35 @@
 #!/bin/sh
 
+validate_name() {
+    if [ -z "$1" ]; then
+        return 1
+    fi
+    # Check for directory traversal attempts
+    case "$1" in
+        *..* | */* | *.*)
+            echo "error: invalid name format: $1" >&2
+            return 1
+            ;;
+    esac
+    return 0
+}
+
+ensure_uuid_file() {
+    local file="$1"
+    if [ ! -f "$file" ] || [ ! -s "$file" ]; then
+        gen_uuid > "$file"
+        chmod 600 "$file"
+    fi
+}
+
 compile_profile_psk() {
-    [ -z "$HOST" ] \
-    && echo 'error: variable HOST must have a value' \
-    && exit 1
-
-    if [ ! -f /profile.uuid ] || [ ! -s /profile.uuid ]; then
-        gen_uuid > /profile.uuid
+    if [ -z "$HOST" ]; then
+        echo 'error: variable HOST must have a value' >&2
+        exit 1
     fi
 
-    if [ ! -f /service.uuid ] || [ ! -s /service.uuid ]; then
-        gen_uuid > /service.uuid
-    fi
+    ensure_uuid_file /profile.uuid
+    ensure_uuid_file /service.uuid
 
     PROFILE_NAME='IKEv2 VPN'
     PROFILE_ID=$(echo "$HOST" | tr -s '.' '\n' | tac | tr -s '\n' '.' | head -c -1)
@@ -48,34 +66,64 @@ compile_profile_psk() {
 }
 
 add_psk() {
+    if ! validate_name "$1"; then
+        return 1
+    fi
+
     KEY=$(echo "$2" | xargs)
 
     if [ -z "$KEY" ]; then
         KEY=$(gen_psk)
     fi
 
-    printf 'ike-%s {\n    secret = "%s"\n}\n' "$1" "$KEY" \
-    > /etc/swanctl/conf.d/psk-"$1".conf
+    local psk_file="/etc/swanctl/conf.d/psk-$1.conf"
+    printf 'ike-%s {\n    secret = "%s"\n}\n' "$1" "$KEY" > "$psk_file"
+    chmod 600 "$psk_file"
 }
 
 del_psk() {
-    rm /etc/swanctl/conf.d/psk-"$1".conf
+    if ! validate_name "$1"; then
+        return 1
+    fi
+
+    local psk_file="/etc/swanctl/conf.d/psk-$1.conf"
+    if [ ! -f "$psk_file" ]; then
+        echo "error: PSK credential '$1' does not exist" >&2
+        return 1
+    fi
+    rm "$psk_file"
 }
 
 get_psk() {
-    grep -oEi 'secret.+' /etc/swanctl/conf.d/psk-"$1".conf \
+    if ! validate_name "$1"; then
+        return 1
+    fi
+
+    local psk_file="/etc/swanctl/conf.d/psk-$1.conf"
+    if [ ! -f "$psk_file" ]; then
+        echo "error: PSK credential '$1' does not exist" >&2
+        return 1
+    fi
+
+    grep -oEi 'secret.+' "$psk_file" \
     | grep -oEi '"[a-z0-9=+/]+"' \
     | head -1 \
     | tr -d '"'
 }
 
 set_psk_id() {
-    KEY=$(get_psk "$1")
+    if ! validate_name "$1"; then
+        return 1
+    fi
 
+    KEY=$(get_psk "$1") || return 1
+
+    local psk_file="/etc/swanctl/conf.d/psk-$1.conf"
     printf \
         'ike-%s {\n    id = "%s"\n    secret = "%s"\n}\n' \
         "$1" "$1" "$KEY" \
-    > /etc/swanctl/conf.d/psk-"$1".conf
+    > "$psk_file"
+    chmod 600 "$psk_file"
 }
 
 gen_psk() {
@@ -97,26 +145,30 @@ migrate_psk() {
         | tr -d " #'\""
     )
 
-    for PAIR in $PAIRS; do
+    echo "$PAIRS" | while IFS= read -r PAIR; do
+        [ -z "$PAIR" ] && continue
+
         ID=$(echo "$PAIR" | cut -d ":" -f1)
         ID=$(strip_name "$ID")
         KEY=$(echo "$PAIR" | cut -d ":" -f2)
 
         [ -z "$ID" ] && ID=default
 
-        add_psk "$ID" "$KEY"
-
-        echo "migration: PSK secret moved into /etc/swanctl/conf.d/psk-$ID.conf"
-        echo 'migration: consider to remove /etc/ipsec.secrets'
+        if add_psk "$ID" "$KEY"; then
+            echo "migration: PSK secret moved into /etc/swanctl/conf.d/psk-$ID.conf"
+        else
+            echo "migration: failed to migrate PSK for ID: $ID" >&2
+        fi
     done
 
-    # echo "" > /etc/ipsec.secrets
+    echo 'migration: consider to remove /etc/ipsec.secrets'
 }
 
 set_logging_mode() {
-    [ ! -w /etc/strongswan.conf ] \
-    && echo 'error: /etc/strongswan.conf is not writable' \
-    && exit 1
+    if [ ! -w /etc/strongswan.conf ]; then
+        echo 'error: /etc/strongswan.conf is not writable' >&2
+        exit 1
+    fi
 
     case "$LOGGING_MODE" in
         'zero') LEVEL=-1;;
@@ -130,7 +182,7 @@ set_logging_mode() {
 
     for s in default app asn cfg dmn enc esp ike imc imv job knl lib mgr net pts tls tnc
     do
-        sed -ie "s/$s = \S*$/$s = $LEVEL/g" /etc/strongswan.conf
+        sed -i "s/$s = \\S*$/$s = $LEVEL/g" /etc/strongswan.conf
     done
 
     echo "logging: $LOGGING_MODE mode"
@@ -138,12 +190,40 @@ set_logging_mode() {
 
 start_strongswan() {
     # NOTE: sysctl requires privileged mode
-    sysctl -w net.ipv4.ip_forward=1
-    sysctl -w net.ipv6.conf.all.forwarding=1
-    sysctl -w net.ipv6.conf.eth0.proxy_ndp=1
+    # Check current value first to avoid errors in non-privileged mode
+    current_ipv4=$(sysctl -n net.ipv4.ip_forward 2>/dev/null || echo "0")
+    if [ "$current_ipv4" != "1" ]; then
+        if ! sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1; then
+            echo "warning: failed to enable IPv4 forwarding (current: $current_ipv4)" >&2
+            echo "warning: container may need to run in privileged mode or with --sysctl flags" >&2
+        fi
+    fi
 
-    iptables-legacy-restore < /etc/ipv4.nat.rules
-    ip6tables-legacy-restore < /etc/ipv6.nat.rules
+    current_ipv6=$(sysctl -n net.ipv6.conf.all.forwarding 2>/dev/null || echo "0")
+    if [ "$current_ipv6" != "1" ]; then
+        if ! sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null 2>&1; then
+            echo "warning: failed to enable IPv6 forwarding (current: $current_ipv6)" >&2
+            echo "warning: container may need to run in privileged mode or with --sysctl flags" >&2
+        fi
+    fi
+
+    current_ndp=$(sysctl -n net.ipv6.conf.eth0.proxy_ndp 2>/dev/null || echo "0")
+    if [ "$current_ndp" != "1" ]; then
+        if ! sysctl -w net.ipv6.conf.eth0.proxy_ndp=1 >/dev/null 2>&1; then
+            echo "warning: failed to enable IPv6 proxy NDP (current: $current_ndp)" >&2
+            echo "warning: container may need to run in privileged mode or with --sysctl flags" >&2
+        fi
+    fi
+
+    if ! iptables-legacy-restore < /etc/ipv4.nat.rules; then
+        echo "error: failed to restore IPv4 iptables rules" >&2
+        exit 1
+    fi
+
+    if ! ip6tables-legacy-restore < /etc/ipv6.nat.rules; then
+        echo "error: failed to restore IPv6 iptables rules" >&2
+        exit 1
+    fi
 
     [ -n "$LOGGING_MODE" ] && set_logging_mode
 
@@ -153,11 +233,15 @@ start_strongswan() {
     swanctl --load-all --noprompt
 
     # NOTE: it will try to migrate existing ipsec.secrets automatically
-    [ -n "$IPSEC_AUTO_MIGRATE" ] \
+    if [ -n "$IPSEC_AUTO_MIGRATE" ] \
     && [ -f /etc/ipsec.secrets ] \
-    && [ -s /etc/ipsec.secrets ] \
-    && migrate_psk \
-    && swanctl --load-creds --noprompt
+    && [ -s /etc/ipsec.secrets ]; then
+        if migrate_psk; then
+            swanctl --load-creds --noprompt
+        else
+            echo "warning: PSK migration encountered errors" >&2
+        fi
+    fi
 
     # shellcheck disable=SC2046
     wait $(jobs -p)
