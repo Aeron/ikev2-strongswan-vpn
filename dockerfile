@@ -1,7 +1,7 @@
-FROM docker.io/bitnami/minideb:bullseye
+FROM docker.io/bitnami/minideb:trixie
 
-LABEL org.opencontainers.image.source https://github.com/Aeron/ikev2-strongswan-vpn
-LABEL org.opencontainers.image.licenses MIT
+LABEL org.opencontainers.image.source="https://github.com/Aeron/ikev2-strongswan-vpn"
+LABEL org.opencontainers.image.licenses="MIT"
 
 RUN install_packages \
     libstrongswan-standard-plugins \
@@ -28,8 +28,8 @@ VOLUME /var/run
 
 EXPOSE 500/udp 4500/udp
 
-ENV LOGGING_MODE ''
-ENV IPSEC_AUTO_MIGRATE 1
+ENV LOGGING_MODE=""
+ENV IPSEC_AUTO_MIGRATE=1
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "start" ]
